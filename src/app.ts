@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 
 // API routes
-app.use('/', routes);
+app.use('/api', routes);
 
 // Error handling middleware (must be last)
 app.use(notFoundHandler);
