@@ -94,4 +94,4 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-/src/generated/prisma
+/generated/prisma
