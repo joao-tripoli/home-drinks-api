@@ -3,6 +3,7 @@ export interface EnvironmentConfig {
   PORT: number;
   API_VERSION: string;
   LOG_LEVEL: string;
+  DATABASE_URL: string;
 }
 
 export const config: EnvironmentConfig = {
@@ -10,6 +11,7 @@ export const config: EnvironmentConfig = {
   PORT: parseInt(process.env.PORT || '3001', 10),
   API_VERSION: process.env.API_VERSION || '1.0.0',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  DATABASE_URL: process.env.DATABASE_URL || '',
 };
 
 export const isDevelopment = config.NODE_ENV === 'development';
