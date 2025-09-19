@@ -230,4 +230,48 @@ export class DrinksController {
       res.status(500).json({ error: 'Internal server error' });
     }
   };
+
+  public uploadDrinkImage = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const file = req.file;
+
+      if (!file) {
+        res.status(400).json({ error: 'No image file provided' });
+        return;
+      }
+
+      logger.info('Uploading drink image', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        drinkId: id,
+        filename: file.filename,
+      });
+
+      // Create the image URL (adjust this based on your server setup)
+      const imageUrl = `/uploads/${file.filename}`;
+
+      const drink = await this.drinksService.uploadDrinkImage(id, imageUrl);
+
+      if (!drink) {
+        res.status(404).json({ error: 'Drink not found' });
+        return;
+      }
+
+      res.json({
+        message: 'Image uploaded successfully',
+        drink,
+        imageUrl,
+      });
+    } catch (error) {
+      logger.error('Error uploading drink image', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        drinkId: req.params.id,
+      });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
 }

@@ -1,4 +1,5 @@
 import express, { Application } from 'express';
+import path from 'path';
 import { config } from './config/environment';
 import { errorHandler, notFoundHandler, requestLogger } from './middlewares';
 import routes from './routes';
@@ -15,6 +16,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging middleware
 app.use(requestLogger);
+
+// Serve static files (uploaded images)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API routes
 app.use('/api', routes);

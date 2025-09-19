@@ -1,7 +1,7 @@
 import {
   CreateDrinkDTO,
   DrinkDTO,
-  DrinksListResponseDTO,
+  PaginatedResponseDTO,
   UpdateDrinkDTO,
 } from '@/dtos/drinks.dto';
 import { prisma } from '@/lib/prisma';
@@ -12,7 +12,7 @@ export class DrinksService {
   public async getAllDrinks(
     page: number = 1,
     limit: number = 10
-  ): Promise<DrinksListResponseDTO> {
+  ): Promise<PaginatedResponseDTO<DrinkDTO>> {
     try {
       const skip = (page - 1) * limit;
 
@@ -26,7 +26,7 @@ export class DrinksService {
       ]);
 
       return {
-        drinks: drinks.map(this.mapDrinkToDTO),
+        data: drinks.map(this.mapDrinkToDTO),
         total,
         page,
         limit,
@@ -59,7 +59,7 @@ export class DrinksService {
     category: string,
     page: number = 1,
     limit: number = 10
-  ): Promise<DrinksListResponseDTO> {
+  ): Promise<PaginatedResponseDTO<DrinkDTO>> {
     try {
       const skip = (page - 1) * limit;
 
@@ -76,7 +76,7 @@ export class DrinksService {
       ]);
 
       return {
-        drinks: drinks.map(this.mapDrinkToDTO),
+        data: drinks.map(this.mapDrinkToDTO),
         total,
         page,
         limit,
@@ -94,7 +94,7 @@ export class DrinksService {
     query: string,
     page: number = 1,
     limit: number = 10
-  ): Promise<DrinksListResponseDTO> {
+  ): Promise<PaginatedResponseDTO<DrinkDTO>> {
     try {
       const skip = (page - 1) * limit;
 
@@ -123,7 +123,7 @@ export class DrinksService {
       ]);
 
       return {
-        drinks: drinks.map(this.mapDrinkToDTO),
+        data: drinks.map(this.mapDrinkToDTO),
         total,
         page,
         limit,
@@ -150,6 +150,30 @@ export class DrinksService {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw new Error('Failed to create drink');
+    }
+  }
+
+  public async uploadDrinkImage(
+    drinkId: string,
+    imageUrl: string
+  ): Promise<DrinkDTO | null> {
+    try {
+      const drink = await prisma.drink.update({
+        where: { id: drinkId },
+        data: { imageUrl },
+      });
+
+      logger.info('Drink image uploaded successfully', {
+        drinkId,
+        imageUrl,
+      });
+      return this.mapDrinkToDTO(drink);
+    } catch (error) {
+      logger.error('Error uploading drink image', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        drinkId,
+      });
+      throw new Error('Failed to upload drink image');
     }
   }
 

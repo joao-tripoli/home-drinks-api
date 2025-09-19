@@ -28,8 +28,8 @@ export interface UpdateDrinkDTO {
   imageUrl?: string;
 }
 
-export interface DrinksListResponseDTO {
-  drinks: DrinkDTO[];
+export interface PaginatedResponseDTO<T> {
+  data: T[];
   total: number;
   page: number;
   limit: number;
