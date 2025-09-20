@@ -10,94 +10,8 @@ export class CloudUploadController {
     this.drinksService = new DrinksService();
   }
 
-  // Example: Upload to AWS S3
-  public uploadToS3 = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { id } = req.params;
-      const file = req.file;
-
-      if (!file) {
-        res.status(400).json({ error: 'No image file provided' });
-        return;
-      }
-
-      logger.info('Uploading drink image to S3', {
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
-        drinkId: id,
-        filename: file.originalname,
-      });
-
-      const imageUrl = await CloudStorageService.uploadToS3(
-        file,
-        'your-bucket-name'
-      );
-      const drink = await this.drinksService.uploadDrinkImage(id, imageUrl);
-
-      if (!drink) {
-        res.status(404).json({ error: 'Drink not found' });
-        return;
-      }
-
-      res.json({
-        message: 'Image uploaded to S3 successfully',
-        drink,
-        imageUrl,
-      });
-    } catch (error) {
-      logger.error('Error uploading drink image to S3', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        drinkId: req.params.id,
-      });
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  };
-
-  // Example: Upload to Google Cloud Storage
-  public uploadToGCS = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { id } = req.params;
-      const file = req.file;
-
-      if (!file) {
-        res.status(400).json({ error: 'No image file provided' });
-        return;
-      }
-
-      logger.info('Uploading drink image to GCS', {
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
-        drinkId: id,
-        filename: file.originalname,
-      });
-
-      const imageUrl = await CloudStorageService.uploadToGCS(
-        file,
-        'your-bucket-name'
-      );
-      const drink = await this.drinksService.uploadDrinkImage(id, imageUrl);
-
-      if (!drink) {
-        res.status(404).json({ error: 'Drink not found' });
-        return;
-      }
-
-      res.json({
-        message: 'Image uploaded to GCS successfully',
-        drink,
-        imageUrl,
-      });
-    } catch (error) {
-      logger.error('Error uploading drink image to GCS', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        drinkId: req.params.id,
-      });
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  };
-
-  // Example: Upload to Cloudinary
-  public uploadToCloudinary = async (
+  // Upload to Uploadcare
+  public uploadToUploadcare = async (
     req: Request,
     res: Response
   ): Promise<void> => {
@@ -110,15 +24,22 @@ export class CloudUploadController {
         return;
       }
 
-      logger.info('Uploading drink image to Cloudinary', {
+      // Get user ID from request (you'll need to implement proper authentication)
+      const userId = req.user?.id || 'anonymous'; // Adjust based on your auth implementation
+
+      logger.info('Uploading drink image to Uploadcare', {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
         drinkId: id,
         filename: file.originalname,
+        userId,
       });
 
-      const imageUrl = await CloudStorageService.uploadToCloudinary(file);
-      const drink = await this.drinksService.uploadDrinkImage(id, imageUrl);
+      const result = await CloudStorageService.uploadToUploadcare(file, userId);
+      const drink = await this.drinksService.uploadDrinkImage(
+        id,
+        result.cdnUrl
+      );
 
       if (!drink) {
         res.status(404).json({ error: 'Drink not found' });
@@ -126,12 +47,13 @@ export class CloudUploadController {
       }
 
       res.json({
-        message: 'Image uploaded to Cloudinary successfully',
+        message: 'Image uploaded to Uploadcare successfully',
         drink,
-        imageUrl,
+        imageUrl: result.cdnUrl,
+        fileId: result.uuid,
       });
     } catch (error) {
-      logger.error('Error uploading drink image to Cloudinary', {
+      logger.error('Error uploading drink image to Uploadcare', {
         error: error instanceof Error ? error.message : 'Unknown error',
         drinkId: req.params.id,
       });
@@ -139,44 +61,74 @@ export class CloudUploadController {
     }
   };
 
-  // Example: Upload to Azure Blob Storage
-  public uploadToAzure = async (req: Request, res: Response): Promise<void> => {
+  // Get file metadata
+  public getFileMetadata = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
-      const { id } = req.params;
-      const file = req.file;
+      const { fileId } = req.params;
 
-      if (!file) {
-        res.status(400).json({ error: 'No image file provided' });
-        return;
-      }
+      const fileMetadata = await CloudStorageService.getFileMetadata(fileId);
 
-      logger.info('Uploading drink image to Azure', {
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
-        drinkId: id,
-        filename: file.originalname,
-      });
-
-      const imageUrl = await CloudStorageService.uploadToAzure(
-        file,
-        'your-container-name'
-      );
-      const drink = await this.drinksService.uploadDrinkImage(id, imageUrl);
-
-      if (!drink) {
-        res.status(404).json({ error: 'Drink not found' });
+      if (!fileMetadata) {
+        res.status(404).json({ error: 'File not found' });
         return;
       }
 
       res.json({
-        message: 'Image uploaded to Azure successfully',
-        drink,
-        imageUrl,
+        file: fileMetadata,
       });
     } catch (error) {
-      logger.error('Error uploading drink image to Azure', {
+      logger.error('Error retrieving file metadata', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        drinkId: req.params.id,
+        fileId: req.params.fileId,
+      });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+
+  // Get files by user
+  public getFilesByUser = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const userId = req.user?.id || 'anonymous'; // Adjust based on your auth implementation
+
+      const files = await CloudStorageService.getFilesByUserId(userId);
+
+      res.json({
+        files,
+        count: files.length,
+      });
+    } catch (error) {
+      logger.error('Error retrieving files by user', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        userId: req.user?.id,
+      });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+
+  // Delete file metadata
+  public deleteFileMetadata = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { fileId } = req.params;
+
+      const deletedFile = await CloudStorageService.deleteFileMetadata(fileId);
+
+      res.json({
+        message: 'File metadata deleted successfully',
+        file: deletedFile,
+      });
+    } catch (error) {
+      logger.error('Error deleting file metadata', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        fileId: req.params.fileId,
       });
       res.status(500).json({ error: 'Internal server error' });
     }

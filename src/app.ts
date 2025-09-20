@@ -1,3 +1,4 @@
+import { clerkMiddleware } from '@clerk/express';
 import express, { Application } from 'express';
 import path from 'path';
 import { config } from './config/environment';
@@ -16,6 +17,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging middleware
 app.use(requestLogger);
+
+// Auth middleware
+app.use(clerkMiddleware());
 
 // Serve static files (uploaded images)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

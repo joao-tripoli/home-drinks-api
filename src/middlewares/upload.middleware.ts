@@ -3,20 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 
-// Configure storage for local file system
-const storage = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req: Request, file: Express.Multer.File, cb) => {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `drink-${uniqueSuffix}${ext}`);
-  },
-});
-
-// Configure memory storage (for cloud uploads)
+// Configure memory storage for Uploadcare (since we upload directly to cloud)
 const memoryStorage = multer.memoryStorage();
 
 // File filter to only allow images
@@ -38,40 +25,31 @@ const fileFilter = (
   }
 };
 
-// Local storage upload middleware
-export const uploadToLocal = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-  fileFilter: fileFilter,
-});
-
-// Memory storage upload middleware (for cloud services)
+// Memory storage upload middleware (for Uploadcare)
 export const uploadToMemory = multer({
   storage: memoryStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit (Uploadcare supports larger files)
   },
   fileFilter: fileFilter,
 });
 
-// Single file upload middleware
+// Single file upload middleware for Uploadcare
 export const uploadSingle = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  uploadToLocal.single('image')(req, res, next);
+  uploadToMemory.single('image')(req, res, next);
 };
 
-// Multiple files upload middleware
+// Multiple files upload middleware for Uploadcare
 export const uploadMultiple = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  uploadToLocal.array('images', 5)(req, res, next);
+  uploadToMemory.array('images', 10)(req, res, next); // Increased limit for Uploadcare
 };
 
 // Error handling middleware for multer
@@ -85,14 +63,14 @@ export const handleUploadError = (
     if (error.code === 'LIMIT_FILE_SIZE') {
       res.status(400).json({
         error: 'File too large',
-        message: 'File size must be less than 5MB',
+        message: 'File size must be less than 10MB',
       });
       return;
     }
     if (error.code === 'LIMIT_FILE_COUNT') {
       res.status(400).json({
         error: 'Too many files',
-        message: 'Maximum 5 files allowed',
+        message: 'Maximum 10 files allowed',
       });
       return;
     }

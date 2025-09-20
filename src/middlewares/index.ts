@@ -4,6 +4,5 @@ export {
   handleUploadError,
   uploadMultiple,
   uploadSingle,
-  uploadToLocal,
   uploadToMemory,
 } from './upload.middleware';

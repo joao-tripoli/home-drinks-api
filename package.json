@@ -22,8 +22,10 @@
   "license": "ISC",
   "packageManager": "pnpm@10.14.0",
   "dependencies": {
+    "@clerk/express": "^1.0.0",
     "@prisma/client": "^5.7.1",
     "@types/multer": "^2.0.0",
+    "@uploadcare/upload-client": "^1.0.0",
     "express": "^5.1.0",
     "multer": "^2.0.2"
   },
