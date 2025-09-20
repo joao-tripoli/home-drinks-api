@@ -1,3 +1,4 @@
+import { getAuth } from '@clerk/express';
 import { Request, Response } from 'express';
 import { CloudStorageService } from '../services/cloud-storage.service';
 import { DrinksService } from '../services/drinks.service';
@@ -24,8 +25,12 @@ export class CloudUploadController {
         return;
       }
 
-      // Get user ID from request (you'll need to implement proper authentication)
-      const userId = req.user?.id || 'anonymous'; // Adjust based on your auth implementation
+      const { userId } = getAuth(req);
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
 
       logger.info('Uploading drink image to Uploadcare', {
         ip: req.ip,
@@ -94,7 +99,12 @@ export class CloudUploadController {
     res: Response
   ): Promise<void> => {
     try {
-      const userId = req.user?.id || 'anonymous'; // Adjust based on your auth implementation
+      const { userId } = getAuth(req);
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
 
       const files = await CloudStorageService.getFilesByUserId(userId);
 
@@ -105,7 +115,6 @@ export class CloudUploadController {
     } catch (error) {
       logger.error('Error retrieving files by user', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        userId: req.user?.id,
       });
       res.status(500).json({ error: 'Internal server error' });
     }

@@ -32,10 +32,10 @@ export class CloudStorageService {
       });
 
       // Store metadata in database
-      const uploadcareFile = await prisma.uploadCareFile.create({
+      const uploadcareFile = await prisma.uploadcareFile.create({
         data: {
           fileId: result.uuid,
-          fileUrl: result.cdnUrl,
+          fileUrl: result.cdnUrl || '',
           userId: userId,
           fileName: file.originalname,
           fileSize: file.size,
@@ -52,7 +52,7 @@ export class CloudStorageService {
 
       return {
         uuid: result.uuid,
-        cdnUrl: result.cdnUrl,
+        cdnUrl: result.cdnUrl || '',
         fileName: file.originalname,
         fileSize: file.size,
         contentType: file.mimetype,
